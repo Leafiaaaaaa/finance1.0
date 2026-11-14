@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>金融消費評議資格智慧判定系統 | Ombudsman AI</title>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Word 模板填充套件 -->
+  <script src="https://unpkg.com/pizzip@3.1.4/dist/pizzip.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.37.11/docxtemplater.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -83,7 +86,7 @@
 
     /* 格線區塊 */
     .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
     
     .rule-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; }
     .rule-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
@@ -101,22 +104,22 @@
     .bar-seg.done { background: #10b981; }
 
     /* 表單元件 */
-    .form-group { margin-bottom: 20px; }
-    .form-label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: #334155; }
+    .form-group { margin-bottom: 18px; }
+    .form-label { display: block; font-size: 0.88rem; font-weight: 600; margin-bottom: 6px; color: #334155; }
     .req { color: #ef4444; margin-left: 2px; }
     .form-control {
-      width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1;
-      border-radius: 10px; font-size: 0.95rem; background: #fff;
+      width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1;
+      border-radius: 10px; font-size: 0.92rem; background: #fff;
     }
     .form-control:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
-    .form-tip { font-size: 0.8rem; color: #64748b; margin-top: 6px; }
+    .form-tip { font-size: 0.78rem; color: #64748b; margin-top: 5px; }
     .notice-box {
       background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px;
-      padding: 14px; color: #1e40af; font-size: 0.85rem; margin-bottom: 20px;
+      padding: 12px 14px; color: #1e40af; font-size: 0.84rem; margin-bottom: 18px;
     }
     .terms-box {
       background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
-      padding: 14px; margin-top: 8px;
+      padding: 14px; margin-top: 12px;
     }
 
     .industry-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
@@ -286,8 +289,8 @@
 
           <div class="grid-2">
             <div class="form-group">
-              <label for="institutionName" class="form-label">2. 金融機構名稱<span class="req">*</span></label>
-              <input type="text" id="institutionName" name="institutionName" class="form-control" placeholder="例如：玉山商業銀行">
+              <label for="institutionName" class="form-label">2. 金融機構名稱 (申請書相對人)<span class="req">*</span></label>
+              <input type="text" id="institutionName" name="institutionName" class="form-control" placeholder="例如：玉山商業銀行股份有限公司">
             </div>
             <div class="form-group">
               <label for="issueCategory" class="form-label">3. 爭議類別主軸<span class="req">*</span></label>
@@ -364,8 +367,16 @@
           </div>
 
           <div class="form-group">
-            <label for="incidentDetail" class="form-label">3. 爭議經過事實陳述<span class="req">*</span></label>
+            <label for="incidentDetail" class="form-label">3. 爭議經過事實陳述 (將自動帶入申請書第叁欄)<span class="req">*</span></label>
             <textarea id="incidentDetail" name="incidentDetail" rows="4" class="form-control" placeholder="請精簡描述爭議始末（何時被扣款、如何與客服溝通、爭端點等）..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">4. 是否同意評議中心試行調處？（申請書第陸欄）</label>
+            <div style="display: flex; gap: 20px; font-size: 0.9rem;">
+              <label style="cursor: pointer;"><input type="radio" name="agreeMediation" value="同意" checked> 同意試行調處</label>
+              <label style="cursor: pointer;"><input type="radio" name="agreeMediation" value="不同意"> 不同意</label>
+            </div>
           </div>
 
           <div class="terms-box">
@@ -464,8 +475,8 @@
           <div class="card">
             <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 12px;">下一步行動建議</h3>
             <div style="display: flex; flex-direction: column; gap: 10px;">
-              <button type="button" id="downloadApplicationBtn" class="btn btn-accent" style="justify-content: center;">
-                <i data-lucide="download"></i> 下載評議申請書
+              <button type="button" id="downloadApplicationBtn" class="btn btn-accent" onclick="generateDocxFromTemplate()" style="justify-content: center;">
+                <i data-lucide="download"></i> 下載評議申請書 (.docx)
               </button>
               <button type="button" class="btn btn-primary" onclick="copyResultReport()" style="justify-content: center;">
                 <i data-lucide="copy"></i> 複製本案分析結論摘要
@@ -498,7 +509,6 @@
       const targetSec = document.getElementById(`page-${pageId}`);
       if (targetSec) targetSec.classList.add('active');
 
-      // 導航列高亮對應：首頁對應 nav-home，表單與結果頁統一對應 nav-form (智慧檢測)
       const navKey = (pageId === 'home') ? 'home' : 'form';
       const targetNav = document.getElementById(`nav-${navKey}`);
       if (targetNav) targetNav.classList.add('active');
@@ -630,7 +640,7 @@
       const d15 = new Date(today); d15.setDate(today.getDate() - 15);
       const toISO = (d) => d.toISOString().split('T')[0];
 
-      document.getElementById('institutionName').value = '玉山商業銀行';
+      document.getElementById('institutionName').value = '玉山商業銀行股份有限公司';
       document.getElementById('issueCategory').value = '信用卡未授權扣款/盜刷';
       document.querySelector('input[name="hasComplained"][value="yes"]').checked = true;
       toggleComplainSection(true);
@@ -641,7 +651,7 @@
       document.querySelector('input[name="courtStatus"][value="no"]').checked = true;
       document.getElementById('incidentDate').value = toISO(d35);
       document.getElementById('claimAmount').value = 85000;
-      document.getElementById('incidentDetail').value = '接獲多筆未授權之境外網站扣款，立即進線客服要求列爭議款遭拒，銀行回函認定應由持卡人全額負擔。';
+      document.getElementById('incidentDetail').value = '申請人於深夜接獲多筆未經本人授權之境外網站刷卡簡訊，隨即進線相對人客服中心掛失並聲明非本人消費，惟相對人書面回函仍認定應由持卡人全額負擔，故依法申請評議。';
       document.getElementById('agreeTerms').checked = true;
       showToast('已填入符合法規門檻之測試範例');
     }
@@ -669,7 +679,8 @@
         courtDetermined: document.querySelector('input[name="courtStatus"]:checked').value === 'yes',
         incidentDate: document.getElementById('incidentDate').value,
         claimAmount: Number(document.getElementById('claimAmount').value || 0),
-        incidentDetail: document.getElementById('incidentDetail').value.trim()
+        incidentDetail: document.getElementById('incidentDetail').value.trim(),
+        agreeMediation: document.querySelector('input[name="agreeMediation"]:checked').value
       };
     }
 
@@ -855,6 +866,70 @@
       if (window.lucide) lucide.createIcons();
     }
 
+    // =========================================================================
+    // 5. 一鍵下載申請書 (從同資料夾讀取 template.docx 並填入案件資料，個資欄保留空白)
+    // =========================================================================
+    function toROCDateString(isoDateStr) {
+      if (!isoDateStr) return '    年    月    日';
+      const d = new Date(isoDateStr);
+      if (isNaN(d.getTime())) return '    年    月    日';
+      return `${d.getFullYear() - 1911} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`;
+    }
+
+    async function generateDocxFromTemplate() {
+      const data = collectFormData();
+
+      // 對應 template.docx 內的變數標籤
+      const templateContext = {
+        institutionName: data.institutionName || '',
+        claimTarget: `請求相對人賠償新台幣 ${data.claimAmount.toLocaleString()} 元整。`,
+        incidentDetail: data.incidentDetail || '',
+        complainDate: toROCDateString(data.complainDate),
+        issueCategory: data.issueCategory || '',
+        replyStatusText: data.replyStatus === 'replied_rejected'
+          ? `相對人於 ${toROCDateString(data.replyDate)} 回覆，惟處理結果未獲妥適解決，申請人無法接受。`
+          : `申請人於 ${toROCDateString(data.complainDate)} 提出申訴，已逾 30 日仍未獲相對人妥適回覆。`,
+        mediationCheck: data.agreeMediation === '同意' ? '☑同意  □不同意' : '□同意  ☑不同意',
+        todayROC: toROCDateString(new Date().toISOString().split('T')[0])
+      };
+
+      try {
+        showToast('正在讀取申請書模板並填入案件資料...');
+        const response = await fetch('./template.docx');
+        if (!response.ok) {
+          throw new Error('找不到 template.docx 模板檔案');
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const zip = new PizZip(arrayBuffer);
+        const doc = new window.docxtemplater(zip, {
+          paragraphLoop: true,
+          linebreaks: true
+        });
+
+        doc.render(templateContext);
+
+        const outBlob = doc.getZip().generate({
+          type: 'blob',
+          mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        });
+
+        const url = URL.createObjectURL(outBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `財團法人金融消費評議中心評議申請書_${data.institutionName || '草稿'}.docx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        showToast('申請書下載完成！');
+      } catch (error) {
+        console.error(error);
+        showToast('讀取 template.docx 失敗，請確認檔案已上傳至同資料夾');
+      }
+    }
+
     function copyResultReport() {
       const inst = document.getElementById('sumInst').innerText;
       const cat = document.getElementById('sumCat').innerText;
@@ -871,7 +946,7 @@
       const t = document.getElementById('toast');
       t.innerText = msg;
       t.style.display = 'block';
-      setTimeout(() => { t.style.display = 'none'; }, 3000);
+      setTimeout(() => { t.style.display = 'none'; }, 3200);
     }
 
     window.addEventListener('DOMContentLoaded', () => {
